@@ -16,9 +16,10 @@ import bcrypt
 from jose import jwt
 
 from models import get_db, init_db
-from monitor import scan_all_keywords
+from monitor import scan_all_keywords, ALL_SOURCES
 from scorer import score_and_update_mentions
 from alerts import dispatch_unread_mentions, format_mention_message
+from onboarding import get_suggestions, get_onboarding_tips, KEYWORD_SUGGESTIONS
 
 # Config
 SECRET_KEY = os.environ.get("SECRET_KEY", "signalseek-dev-secret-change-in-production")
@@ -188,6 +189,11 @@ async def dashboard(request: Request):
         "mentions": [dict(m) for m in mentions],
         "total_mentions": total_mentions,
         "leads_found": leads_found,
+        "is_new_user": len(keywords) == 0,
+        "suggestions": get_suggestions(count=6),
+        "tips": get_onboarding_tips(count=3),
+        "categories": list(KEYWORD_SUGGESTIONS.keys()),
+        "source_count": len(ALL_SOURCES),
     })
 
 
