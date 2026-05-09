@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Register — SignalSeek</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; color: #e2e8f0; background: #0a0a1a; min-height: 100vh; display: flex; align-items: center; justify-content: center; }
+        .card { background: #111133; border: 1px solid #1e1e4a; border-radius: 16px; padding: 40px; width: 100%; max-width: 420px; }
+        .card h1 { font-size: 1.8rem; margin-bottom: 8px; }
+        .card p { color: #94a3b8; margin-bottom: 24px; }
+        .error { background: #3b1111; border: 1px solid #dc2626; color: #fca5a5; padding: 12px; border-radius: 8px; margin-bottom: 16px; }
+        label { display: block; font-weight: 500; margin-bottom: 4px; font-size: 0.9rem; color: #94a3b8; }
+        input { width: 100%; padding: 12px; background: #0a0a1a; border: 1px solid #1e1e4a; border-radius: 8px; color: #e2e8f0; font-size: 1rem; margin-bottom: 16px; }
+        input:focus { outline: none; border-color: #3b82f6; }
+        button { width: 100%; padding: 14px; background: #3b82f6; color: white; border: none; border-radius: 8px; font-size: 1rem; font-weight: 600; cursor: pointer; }
+        button:hover { background: #2563eb; }
+        .link { text-align: center; margin-top: 16px; color: #94a3b8; }
+        .link a { color: #60a5fa; text-decoration: none; }
+        .hint { font-size: 0.85rem; color: #64748b; margin-top: -12px; margin-bottom: 16px; }
+    </style>
+</head>
+<body>
+    <div class="card">
+        <h1>Create account</h1>
+        <p>Start finding leads on Reddit today</p>
+        {% if error %}<div class="error">{{ error }}</div>{% endif %}
+        <form method="POST" action="/register">
+            <label for="email">Email</label>
+            <input type="email" name="email" id="email" required placeholder="you@example.com">
+            <label for="password">Password</label>
+            <input type="password" name="password" id="password" required placeholder="Min 6 characters">
+            <label for="telegram_chat_id">Telegram Chat ID (optional)</label>
+            <input type="text" name="telegram_chat_id" id="telegram_chat_id" placeholder="e.g. 123456789">
+            <p class="hint">Get your Chat ID from <a href="https://t.me/userinfobot" target="_blank">@userinfobot</a> on Telegram to receive alerts.</p>
+            <button type="submit">Create Free Account</button>
+        </form>
+        <p class="link">Already have an account? <a href="/login">Sign in</a></p>
+    </div>
+</body>
+</html>

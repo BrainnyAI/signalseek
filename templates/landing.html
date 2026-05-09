@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SignalSeek — AI-Powered Reddit Lead Monitoring</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; color: #e2e8f0; background: #0a0a1a; line-height: 1.6; }
+        .container { max-width: 1100px; margin: 0 auto; padding: 0 24px; }
+        nav { display: flex; justify-content: space-between; align-items: center; padding: 20px 0; }
+        nav .logo { font-size: 1.5rem; font-weight: 700; color: #60a5fa; }
+        nav a { color: #94a3b8; text-decoration: none; margin-left: 24px; font-weight: 500; }
+        nav a:hover { color: #e2e8f0; }
+        nav a.btn { background: #3b82f6; color: white; padding: 8px 20px; border-radius: 8px; }
+        .hero { text-align: center; padding: 80px 0 60px; }
+        .hero h1 { font-size: 3rem; font-weight: 800; margin-bottom: 16px; background: linear-gradient(135deg, #60a5fa, #a78bfa); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        .hero p { font-size: 1.25rem; color: #94a3b8; max-width: 600px; margin: 0 auto 32px; }
+        .hero .cta { display: inline-flex; gap: 12px; }
+        .btn-primary { background: #3b82f6; color: white; padding: 14px 32px; border-radius: 12px; text-decoration: none; font-weight: 600; font-size: 1.1rem; display: inline-block; }
+        .btn-primary:hover { background: #2563eb; }
+        .btn-outline { border: 2px solid #3b82f6; color: #60a5fa; padding: 14px 32px; border-radius: 12px; text-decoration: none; font-weight: 600; font-size: 1.1rem; }
+        .features { display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px; padding: 60px 0; }
+        .feature { background: #111133; border: 1px solid #1e1e4a; border-radius: 16px; padding: 32px; }
+        .feature .icon { font-size: 2rem; margin-bottom: 12px; }
+        .feature h3 { font-size: 1.2rem; margin-bottom: 8px; }
+        .feature p { color: #94a3b8; font-size: 0.95rem; }
+        .pricing { display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px; padding: 60px 0; }
+        .plan { background: #111133; border: 1px solid #1e1e4a; border-radius: 16px; padding: 36px; text-align: center; }
+        .plan.popular { border-color: #3b82f6; position: relative; }
+        .plan.popular::before { content: "POPULAR"; position: absolute; top: -12px; left: 50%; transform: translateX(-50%); background: #3b82f6; padding: 4px 16px; border-radius: 20px; font-size: 0.75rem; font-weight: 700; }
+        .plan h3 { font-size: 1.3rem; margin-bottom: 8px; }
+        .plan .price { font-size: 2.5rem; font-weight: 800; margin: 12px 0; }
+        .plan .price span { font-size: 1rem; color: #94a3b8; font-weight: 400; }
+        .plan ul { list-style: none; margin: 24px 0; text-align: left; }
+        .plan ul li { padding: 6px 0; color: #94a3b8; }
+        .plan ul li::before { content: "✓"; color: #3b82f6; margin-right: 8px; }
+        .plan a { display: inline-block; background: #3b82f6; color: white; padding: 12px 28px; border-radius: 8px; text-decoration: none; font-weight: 600; margin-top: 16px; width: 100%; }
+        footer { text-align: center; padding: 40px 0; color: #475569; font-size: 0.9rem; }
+        @media (max-width: 768px) { .features, .pricing { grid-template-columns: 1fr; } }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <nav>
+            <span class="logo">📡 SignalSeek</span>
+            <div>
+                <a href="/login">Sign In</a>
+                <a href="/register" class="btn">Get Started</a>
+            </div>
+        </nav>
+
+        <section class="hero">
+            <h1>Turn Reddit Chatter Into Customers</h1>
+            <p>
+                SignalSeek monitors Reddit for your keywords and uses AI to separate real leads from noise.
+                Stop scrolling — start closing.
+            </p>
+            <div class="cta">
+                <a href="/register" class="btn-primary">Start Free — 3 Keywords</a>
+                <a href="#pricing" class="btn-outline">View Pricing</a>
+            </div>
+        </section>
+
+        <section class="features">
+            <div class="feature">
+                <div class="icon">🎯</div>
+                <h3>Lead Qualification</h3>
+                <p>AI analyzes every mention — is it someone looking to buy, a frustrated competitor's customer, or just noise?</p>
+            </div>
+            <div class="feature">
+                <div class="icon">⚡</div>
+                <h3>Real-Time Alerts</h3>
+                <p>Get notified on Telegram the moment a qualified lead mentions your keyword. Never miss an opportunity.</p>
+            </div>
+            <div class="feature">
+                <div class="icon">📊</div>
+                <h3>Dashboard & Insights</h3>
+                <p>See all your mentions, leads, and trends in one place. Know exactly where your market is talking.</p>
+            </div>
+        </section>
+
+        <section id="pricing">
+            <h2 style="text-align:center; font-size:2rem; margin-top:40px;">Simple Pricing</h2>
+            <div class="pricing">
+                <div class="plan">
+                    <h3>Free</h3>
+                    <div class="price">$0<span>/mo</span></div>
+                    <ul>
+                        <li>3 keywords</li>
+                        <li>Daily monitoring</li>
+                        <li>Telegram alerts</li>
+                        <li>Basic AI scoring</li>
+                    </ul>
+                    <a href="/register">Get Started</a>
+                </div>
+                <div class="plan popular">
+                    <h3>Pro</h3>
+                    <div class="price">$9<span>/mo</span></div>
+                    <ul>
+                        <li>20 keywords</li>
+                        <li>Hourly monitoring</li>
+                        <li>Telegram + Email alerts</li>
+                        <li>Advanced AI scoring</li>
+                        <li>Custom subreddit filters</li>
+                    </ul>
+                    <a href="/register">Start Pro</a>
+                </div>
+                <div class="plan">
+                    <h3>Business</h3>
+                    <div class="price">$29<span>/mo</span></div>
+                    <ul>
+                        <li>100 keywords</li>
+                        <li>Real-time monitoring</li>
+                        <li>All alert channels</li>
+                        <li>Priority AI scoring</li>
+                        <li>CSV export</li>
+                        <li>Team access</li>
+                    </ul>
+                    <a href="/register">Start Business</a>
+                </div>
+            </div>
+        </section>
+    </div>
+
+    <footer>
+        <p>SignalSeek © 2026 · AI-powered Reddit lead monitoring</p>
+    </footer>
+</body>
+</html>

@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard — SignalSeek</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; color: #e2e8f0; background: #0a0a1a; line-height: 1.6; }
+        .container { max-width: 1200px; margin: 0 auto; padding: 0 24px; }
+        nav { display: flex; justify-content: space-between; align-items: center; padding: 16px 0; border-bottom: 1px solid #1e1e4a; margin-bottom: 32px; }
+        nav .logo { font-size: 1.3rem; font-weight: 700; color: #60a5fa; }
+        nav .right { display: flex; align-items: center; gap: 16px; }
+        nav .right span { color: #94a3b8; font-size: 0.9rem; }
+        nav .plan-badge { background: #3b82f6; padding: 3px 12px; border-radius: 12px; font-size: 0.8rem; font-weight: 600; text-transform: uppercase; }
+        nav a { color: #94a3b8; text-decoration: none; font-size: 0.9rem; }
+        .error-msg { background: #3b1111; border: 1px solid #dc2626; color: #fca5a5; padding: 12px 16px; border-radius: 8px; margin-bottom: 20px; }
+        .stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-bottom: 32px; }
+        .stat-card { background: #111133; border: 1px solid #1e1e4a; border-radius: 12px; padding: 20px; }
+        .stat-card .number { font-size: 2rem; font-weight: 800; }
+        .stat-card .label { color: #94a3b8; font-size: 0.85rem; }
+        .grid-2 { display: grid; grid-template-columns: 400px 1fr; gap: 24px; margin-bottom: 40px; }
+        @media (max-width: 900px) { .grid-2 { grid-template-columns: 1fr; } }
+        .panel { background: #111133; border: 1px solid #1e1e4a; border-radius: 12px; padding: 24px; }
+        .panel h3 { font-size: 1.1rem; margin-bottom: 16px; }
+        .kw-list { list-style: none; }
+        .kw-list li { padding: 8px 0; border-bottom: 1px solid #1e1e4a; display: flex; justify-content: space-between; align-items: center; }
+        .kw-list li:last-child { border-bottom: none; }
+        .kw-list .delete-btn { background: none; border: 1px solid #dc2626; color: #dc2626; padding: 4px 10px; border-radius: 6px; cursor: pointer; font-size: 0.8rem; }
+        .kw-list .delete-btn:hover { background: #dc2626; color: white; }
+        .kw-list .sr { font-size: 0.8rem; color: #64748b; }
+        .add-kw-form { display: flex; gap: 8px; margin-top: 16px; }
+        .add-kw-form input { flex: 1; padding: 10px; background: #0a0a1a; border: 1px solid #1e1e4a; border-radius: 8px; color: #e2e8f0; }
+        .add-kw-form input:focus { outline: none; border-color: #3b82f6; }
+        .add-kw-form button { padding: 10px 20px; background: #3b82f6; color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: 600; }
+        .mentions-list { list-style: none; }
+        .mention-item { padding: 12px 0; border-bottom: 1px solid #1e1e4a; }
+        .mention-item:last-child { border-bottom: none; }
+        .mention-item .title { font-weight: 600; margin-bottom: 4px; }
+        .mention-item .title a { color: #e2e8f0; text-decoration: none; }
+        .mention-item .title a:hover { color: #60a5fa; }
+        .mention-item .meta { font-size: 0.85rem; color: #64748b; }
+        .mention-item .lead-badge { display: inline-block; padding: 2px 8px; border-radius: 10px; font-size: 0.75rem; font-weight: 600; margin-left: 8px; }
+        .badge-lead { background: #065f46; color: #6ee7b7; }
+        .badge-competitor { background: #5b21b6; color: #c4b5fd; }
+        .badge-question { background: #1e40af; color: #93c5fd; }
+        .score-bar { display: flex; gap: 4px; margin-top: 6px; }
+        .score-dot { width: 20px; height: 6px; border-radius: 3px; }
+        .score-dot.active { background: #3b82f6; }
+        .score-dot.inactive { background: #1e1e4a; }
+        .empty { text-align: center; color: #64748b; padding: 32px 0; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <nav>
+            <span class="logo">📡 SignalSeek</span>
+            <div class="right">
+                <span class="plan-badge">{{ user.plan }}</span>
+                <span>{{ user.email }}</span>
+                <a href="/logout">Logout</a>
+            </div>
+        </nav>
+
+        {% if error %}<div class="error-msg">{{ error }}</div>{% endif %}
+
+        <div class="stats">
+            <div class="stat-card">
+                <div class="number">{{ keywords|length }}</div>
+                <div class="label">Active Keywords</div>
+            </div>
+            <div class="stat-card">
+                <div class="number">{{ total_mentions }}</div>
+                <div class="label">Total Mentions</div>
+            </div>
+            <div class="stat-card">
+                <div class="number">{{ leads_found }}</div>
+                <div class="label">Leads Found 🔴</div>
+            </div>
+        </div>
+
+        <div class="grid-2">
+            <div class="panel">
+                <h3>🔑 Your Keywords</h3>
+                {% if keywords %}
+                <ul class="kw-list">
+                    {% for kw in keywords %}
+                    <li>
+                        <div>
+                            <strong>{{ kw.keyword }}</strong>
+                            {% if kw.subreddits %}<br><span class="sr">in r/{{ kw.subreddits }}</span>{% endif %}
+                        </div>
+                        <form method="POST" action="/keywords/{{ kw.id }}/delete" style="display:inline">
+                            <button type="submit" class="delete-btn">×</button>
+                        </form>
+                    </li>
+                    {% endfor %}
+                </ul>
+                {% else %}
+                <p class="empty">No keywords yet. Add your first keyword to start monitoring.</p>
+                {% endif %}
+
+                <form class="add-kw-form" method="POST" action="/keywords/add">
+                    <input type="text" name="keyword" placeholder="Keyword (e.g. 'project management')" required>
+                    <input type="text" name="subreddits" placeholder="Subreddits (e.g. 'startups,SaaS')" style="max-width:180px">
+                    <button type="submit">Add</button>
+                </form>
+            </div>
+
+            <div class="panel">
+                <h3>📋 Recent Mentions</h3>
+                {% if mentions %}
+                <ul class="mentions-list">
+                    {% for m in mentions %}
+                    <li class="mention-item">
+                        <div class="title">
+                            <a href="{{ m.url }}" target="_blank">{{ m.title or '(no title)' }}</a>
+                            {% if m.is_lead %}<span class="lead-badge badge-lead">LEAD</span>{% endif %}
+                            {% if m.lead_reason and 'competitor' in m.lead_reason.lower() %}<span class="lead-badge badge-competitor">COMPLAINT</span>{% endif %}
+                        </div>
+                        <div class="meta">
+                            r/{{ m.subreddit or '?' }} · u/{{ m.author or '?' }} · ⬆️{{ m.reddit_score or 0 }} · 💬{{ m.num_comments or 0 }}
+                            <br>Keyword: <strong>{{ m.keyword }}</strong>
+                        </div>
+                        <div class="score-bar">
+                            {% set rel = (m.relevance_score or 0) * 100 %}
+                            {% set dots = (rel / 20)|round(0, 'floor')|int %}
+                            {% for i in range(5) %}
+                            <div class="score-dot {{ 'active' if i < dots else 'inactive' }}"></div>
+                            {% endfor %}
+                            <span style="font-size:0.75rem;color:#64748b;margin-left:6px">relevance: {{ "%.0f"|format(rel) }}%</span>
+                        </div>
+                        {% if m.lead_reason %}<div style="font-size:0.8rem;color:#64748b;margin-top:4px">{{ m.lead_reason }}</div>{% endif %}
+                    </li>
+                    {% endfor %}
+                </ul>
+                {% else %}
+                <p class="empty">No mentions found yet. They'll appear here once the scanner runs.</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</body>
+</html>
