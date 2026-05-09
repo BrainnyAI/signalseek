@@ -6,53 +6,161 @@
     <title>Dashboard — SignalSeek</title>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; color: #e2e8f0; background: #0a0a1a; line-height: 1.6; }
-        .container { max-width: 1200px; margin: 0 auto; padding: 0 24px; }
-        nav { display: flex; justify-content: space-between; align-items: center; padding: 16px 0; border-bottom: 1px solid #1e1e4a; margin-bottom: 32px; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            color: #d1d5db; background: #080b16; line-height: 1.6; min-height: 100vh;
+        }
+        .container { max-width: 1280px; margin: 0 auto; padding: 0 24px; }
+
+        /* Nav */
+        nav { display: flex; justify-content: space-between; align-items: center; padding: 16px 0; border-bottom: 1px solid #1a1f36; margin-bottom: 28px; flex-wrap: wrap; gap: 12px; }
         nav .logo { font-size: 1.3rem; font-weight: 700; color: #60a5fa; }
         nav .right { display: flex; align-items: center; gap: 16px; }
-        nav .right span { color: #94a3b8; font-size: 0.9rem; }
-        nav .plan-badge { background: #3b82f6; padding: 3px 12px; border-radius: 12px; font-size: 0.8rem; font-weight: 600; text-transform: uppercase; }
-        nav a { color: #94a3b8; text-decoration: none; font-size: 0.9rem; }
-        .error-msg { background: #3b1111; border: 1px solid #dc2626; color: #fca5a5; padding: 12px 16px; border-radius: 8px; margin-bottom: 20px; }
-        .stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-bottom: 32px; }
-        .stat-card { background: #111133; border: 1px solid #1e1e4a; border-radius: 12px; padding: 20px; }
+        nav .right span { color: #9ca3af; font-size: 0.9rem; }
+        nav .plan-badge { background: linear-gradient(135deg, #3b82f6, #6366f1); padding: 3px 14px; border-radius: 14px; font-size: 0.75rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; }
+        nav a { color: #9ca3af; text-decoration: none; font-size: 0.9rem; transition: color 0.2s; }
+        nav a:hover { color: #e2e8f0; }
+
+        /* Error */
+        .error-msg { background: #3b1111; border: 1px solid #dc2626; color: #fca5a5; padding: 12px 16px; border-radius: 10px; margin-bottom: 20px; font-size: 0.9rem; }
+
+        /* Stats */
+        .stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-bottom: 24px; }
+        @media (max-width: 700px) { .stats { grid-template-columns: 1fr; } }
+        .stat-card {
+            background: #0f1326; border: 1px solid #1e2440; border-radius: 14px; padding: 22px 24px;
+            position: relative; overflow: hidden;
+        }
+        .stat-card::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px; }
+        .stat-card:nth-child(1)::before { background: linear-gradient(90deg, #3b82f6, #6366f1); }
+        .stat-card:nth-child(2)::before { background: linear-gradient(90deg, #8b5cf6, #a855f7); }
+        .stat-card:nth-child(3)::before { background: linear-gradient(90deg, #22c55e, #10b981); }
         .stat-card .number { font-size: 2rem; font-weight: 800; }
-        .stat-card .label { color: #94a3b8; font-size: 0.85rem; }
-        .grid-2 { display: grid; grid-template-columns: 400px 1fr; gap: 24px; margin-bottom: 40px; }
-        @media (max-width: 900px) { .grid-2 { grid-template-columns: 1fr; } }
-        .panel { background: #111133; border: 1px solid #1e1e4a; border-radius: 12px; padding: 24px; }
-        .panel h3 { font-size: 1.1rem; margin-bottom: 16px; }
+        .stat-card:nth-child(1) .number { color: #93c5fd; }
+        .stat-card:nth-child(2) .number { color: #c4b5fd; }
+        .stat-card:nth-child(3) .number { color: #6ee7b7; }
+        .stat-card .label { color: #6b7280; font-size: 0.85rem; margin-top: 2px; }
+
+        /* Trends */
+        .trends-panel {
+            background: #0f1326; border: 1px solid #1e2440; border-radius: 14px;
+            padding: 20px 24px; margin-bottom: 24px;
+        }
+        .trends-panel h3 { font-size: 0.95rem; color: #d1d5db; margin-bottom: 14px; display: flex; align-items: center; gap: 8px; }
+        .trend-chart { display: flex; align-items: flex-end; gap: 12px; height: 120px; position: relative; }
+        @media (max-width: 600px) { .trend-chart { gap: 6px; height: 90px; } }
+        .trend-bar-wrap { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 6px; }
+        .trend-bar-total { width: 100%; max-width: 56px; background: linear-gradient(180deg, #3b82f6, #1d4ed8); border-radius: 6px 6px 0 0; transition: height 0.4s ease; min-height: 2px; position: relative; }
+        .trend-bar-lead { width: 70%; max-width: 38px; background: linear-gradient(180deg, #22c55e, #15803d); border-radius: 4px 4px 0 0; transition: height 0.4s ease; min-height: 1px; }
+        .trend-label { font-size: 0.7rem; color: #6b7280; text-align: center; }
+        .trend-tooltip { font-size: 0.7rem; color: #93c5fd; text-align: center; white-space: nowrap; }
+        .trend-legend { display: flex; gap: 16px; margin-top: 10px; font-size: 0.75rem; color: #6b7280; }
+        .legend-dot { display: inline-block; width: 10px; height: 10px; border-radius: 3px; margin-right: 4px; vertical-align: -1px; }
+        .legend-dot.total { background: #3b82f6; }
+        .legend-dot.leads { background: #22c55e; }
+
+        /* Filters */
+        .filters-bar {
+            display: flex; gap: 12px; margin-bottom: 20px; flex-wrap: wrap; align-items: center;
+            padding: 14px 18px; background: #0f1326; border: 1px solid #1e2440; border-radius: 12px;
+        }
+        .filters-bar label { font-size: 0.8rem; color: #6b7280; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; }
+        .filters-bar select, .filters-bar button {
+            padding: 8px 14px; border-radius: 8px; font-size: 0.85rem; cursor: pointer; border: 1px solid #2d3358;
+            background: #0a0d1a; color: #d1d5db; font-family: inherit;
+        }
+        .filters-bar select:focus { outline: none; border-color: #3b82f6; }
+        .filters-bar button { background: #1d4ed8; border-color: #1d4ed8; color: white; font-weight: 600; display: flex; align-items: center; gap: 6px; transition: background 0.2s; }
+        .filters-bar button:hover { background: #2563eb; }
+        .filters-bar button.export-btn { background: #0f1326; border-color: #2d3358; color: #9ca3af; }
+        .filters-bar button.export-btn:hover { background: #1a1f36; color: #e2e8f0; }
+        .filter-group { display: flex; align-items: center; gap: 6px; }
+        .filter-sep { width: 1px; height: 24px; background: #1e2440; margin: 0 4px; }
+
+        /* Main grid */
+        .main-grid { display: grid; grid-template-columns: 340px 1fr; gap: 24px; margin-bottom: 40px; }
+        @media (max-width: 900px) { .main-grid { grid-template-columns: 1fr; } }
+
+        /* Sidebar */
+        .sidebar { display: flex; flex-direction: column; gap: 20px; }
+        .panel {
+            background: #0f1326; border: 1px solid #1e2440; border-radius: 14px; padding: 20px 24px;
+        }
+        .panel h3 { font-size: 0.95rem; color: #d1d5db; margin-bottom: 14px; display: flex; align-items: center; gap: 8px; }
+        .panel h3 .icon { font-size: 1rem; }
+
+        /* Keyword list */
         .kw-list { list-style: none; }
-        .kw-list li { padding: 8px 0; border-bottom: 1px solid #1e1e4a; display: flex; justify-content: space-between; align-items: center; }
+        .kw-list li { padding: 10px 0; border-bottom: 1px solid #1a1f36; display: flex; justify-content: space-between; align-items: center; }
         .kw-list li:last-child { border-bottom: none; }
-        .kw-list .delete-btn { background: none; border: 1px solid #dc2626; color: #dc2626; padding: 4px 10px; border-radius: 6px; cursor: pointer; font-size: 0.8rem; }
-        .kw-list .delete-btn:hover { background: #dc2626; color: white; }
-        .kw-list .sr { font-size: 0.8rem; color: #64748b; }
-        .add-kw-form { display: flex; gap: 8px; margin-top: 16px; }
-        .add-kw-form input { flex: 1; padding: 10px; background: #0a0a1a; border: 1px solid #1e1e4a; border-radius: 8px; color: #e2e8f0; }
+        .kw-list .kw-info strong { color: #d1d5db; }
+        .kw-list .sr { font-size: 0.78rem; color: #6b7280; display: block; margin-top: 2px; }
+        .kw-list .delete-btn { background: none; border: 1px solid #991b1b; color: #f87171; padding: 4px 10px; border-radius: 6px; cursor: pointer; font-size: 0.8rem; transition: all 0.2s; }
+        .kw-list .delete-btn:hover { background: #991b1b; color: white; }
+        .add-kw-form { display: flex; flex-direction: column; gap: 8px; margin-top: 14px; }
+        .add-kw-form input { padding: 10px 12px; background: #0a0d1a; border: 1px solid #2d3358; border-radius: 8px; color: #d1d5db; font-family: inherit; }
         .add-kw-form input:focus { outline: none; border-color: #3b82f6; }
-        .add-kw-form button { padding: 10px 20px; background: #3b82f6; color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: 600; }
-        .mentions-list { list-style: none; }
-        .mention-item { padding: 12px 0; border-bottom: 1px solid #1e1e4a; }
-        .mention-item:last-child { border-bottom: none; }
-        .mention-item .title { font-weight: 600; margin-bottom: 4px; }
-        .mention-item .title a { color: #e2e8f0; text-decoration: none; }
-        .mention-item .title a:hover { color: #60a5fa; }
-        .mention-item .meta { font-size: 0.85rem; color: #64748b; }
-        .mention-item .lead-badge { display: inline-block; padding: 2px 8px; border-radius: 10px; font-size: 0.75rem; font-weight: 600; margin-left: 8px; }
-        .badge-lead { background: #065f46; color: #6ee7b7; }
-        .badge-competitor { background: #5b21b6; color: #c4b5fd; }
-        .badge-question { background: #1e40af; color: #93c5fd; }
-        .score-bar { display: flex; gap: 4px; margin-top: 6px; }
-        .score-dot { width: 20px; height: 6px; border-radius: 3px; }
+        .add-kw-form .row { display: flex; gap: 8px; }
+        .add-kw-form .row input { flex: 1; }
+        .add-kw-form button { padding: 10px 20px; background: linear-gradient(135deg, #3b82f6, #6366f1); color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: 600; transition: opacity 0.2s; }
+        .add-kw-form button:hover { opacity: 0.9; }
+
+        /* Top keywords widget */
+        .top-kw-list { list-style: none; }
+        .top-kw-list li { padding: 8px 0; border-bottom: 1px solid #1a1f36; display: flex; justify-content: space-between; align-items: center; }
+        .top-kw-list li:last-child { border-bottom: none; }
+        .top-kw-list .kw-name { font-weight: 600; color: #d1d5db; }
+        .top-kw-list .kw-stats { font-size: 0.78rem; color: #6b7280; text-align: right; }
+        .top-kw-list .kw-stats .lead-count { color: #6ee7b7; font-weight: 700; }
+        .top-kw-loading { text-align: center; color: #6b7280; padding: 16px; }
+
+        /* Mentions area */
+        .mentions-area { display: flex; flex-direction: column; gap: 16px; }
+        .mention-card {
+            background: #0f1326; border: 1px solid #1e2440; border-radius: 12px; padding: 16px 20px;
+            transition: border-color 0.2s;
+        }
+        .mention-card:hover { border-color: #2d3358; }
+        .mention-card .title { font-weight: 600; margin-bottom: 4px; }
+        .mention-card .title a { color: #e2e8f0; text-decoration: none; }
+        .mention-card .title a:hover { color: #60a5fa; }
+        .mention-card .meta { font-size: 0.82rem; color: #6b7280; margin-bottom: 6px; }
+        .mention-card .meta strong { color: #9ca3af; }
+        .badge { display: inline-block; padding: 2px 10px; border-radius: 10px; font-size: 0.72rem; font-weight: 700; margin-left: 8px; letter-spacing: 0.03em; }
+        .badge-lead { background: #064e33; color: #6ee7b7; }
+        .badge-competitor { background: #4c1d95; color: #c4b5fd; }
+        .badge-question { background: #1e3a5f; color: #93c5fd; }
+        .badge-noise { background: #1f1a2e; color: #6b7280; }
+        .score-bar { display: flex; align-items: center; gap: 5px; margin-top: 8px; }
+        .score-dot { width: 24px; height: 7px; border-radius: 3px; }
         .score-dot.active { background: #3b82f6; }
-        .score-dot.inactive { background: #1e1e4a; }
-        .empty { text-align: center; color: #64748b; padding: 32px 0; }
+        .score-dot.inactive { background: #1e2440; }
+        .score-text { font-size: 0.75rem; color: #6b7280; margin-left: 6px; }
+        .reason-text { font-size: 0.78rem; color: #4b5563; margin-top: 6px; font-style: italic; }
+
+        .load-more-wrap { text-align: center; padding: 20px; }
+        .load-more-btn {
+            padding: 12px 36px; background: #0f1326; border: 1px solid #2d3358; border-radius: 10px;
+            color: #9ca3af; cursor: pointer; font-size: 0.9rem; font-family: inherit; transition: all 0.2s;
+        }
+        .load-more-btn:hover { border-color: #3b82f6; color: #e2e8f0; }
+        .load-more-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+        .empty-state { text-align: center; color: #6b7280; padding: 48px 20px; }
+        .empty-state .icon { font-size: 2rem; margin-bottom: 12px; display: block; }
+        .loading { text-align: center; color: #6b7280; padding: 32px; }
+
+        /* Responsive */
+        @media (max-width: 600px) {
+            .filters-bar { flex-direction: column; align-items: stretch; }
+            .filter-sep { display: none; }
+            .filter-group { justify-content: space-between; }
+        }
     </style>
 </head>
 <body>
     <div class="container">
+        <!-- Nav -->
         <nav>
             <span class="logo">📡 SignalSeek</span>
             <div class="right">
@@ -64,81 +172,354 @@
 
         {% if error %}<div class="error-msg">{{ error }}</div>{% endif %}
 
-        <div class="stats">
+        <!-- Stats row -->
+        <div class="stats" id="stats-row">
             <div class="stat-card">
-                <div class="number">{{ keywords|length }}</div>
+                <div class="number" id="stat-keywords">{{ keywords|length }}</div>
                 <div class="label">Active Keywords</div>
             </div>
             <div class="stat-card">
-                <div class="number">{{ total_mentions }}</div>
+                <div class="number" id="stat-total">{{ total_mentions }}</div>
                 <div class="label">Total Mentions</div>
             </div>
             <div class="stat-card">
-                <div class="number">{{ leads_found }}</div>
+                <div class="number" id="stat-leads">{{ leads_found }}</div>
                 <div class="label">Leads Found 🔴</div>
             </div>
         </div>
 
-        <div class="grid-2">
-            <div class="panel">
-                <h3>🔑 Your Keywords</h3>
-                {% if keywords %}
-                <ul class="kw-list">
-                    {% for kw in keywords %}
-                    <li>
-                        <div>
-                            <strong>{{ kw.keyword }}</strong>
-                            {% if kw.subreddits %}<br><span class="sr">in r/{{ kw.subreddits }}</span>{% endif %}
-                        </div>
-                        <form method="POST" action="/keywords/{{ kw.id }}/delete" style="display:inline">
-                            <button type="submit" class="delete-btn">×</button>
-                        </form>
-                    </li>
-                    {% endfor %}
-                </ul>
-                {% else %}
-                <p class="empty">No keywords yet. Add your first keyword to start monitoring.</p>
-                {% endif %}
+        <!-- Trends Chart -->
+        <div class="trends-panel" id="trends-panel">
+            <h3>📈 Mention Trends (Last 7 Days)</h3>
+            <div class="trend-chart" id="trend-chart">
+                <div class="loading">Loading trends...</div>
+            </div>
+            <div class="trend-legend">
+                <span><span class="legend-dot total"></span>Total Mentions</span>
+                <span><span class="legend-dot leads"></span>Leads Found</span>
+            </div>
+        </div>
 
-                <form class="add-kw-form" method="POST" action="/keywords/add">
-                    <input type="text" name="keyword" placeholder="Keyword (e.g. 'project management')" required>
-                    <input type="text" name="subreddits" placeholder="Subreddits (e.g. 'startups,SaaS')" style="max-width:180px">
-                    <button type="submit">Add</button>
-                </form>
+        <!-- Filters Bar -->
+        <div class="filters-bar">
+            <div class="filter-group">
+                <label>Source</label>
+                <select id="filter-source" onchange="applyFilters()">
+                    <option value="all">All Sources</option>
+                    <option value="hackernews">HackerNews</option>
+                    <option value="hn_jobs">HN Jobs</option>
+                    <option value="stackexchange">StackExchange</option>
+                    <option value="generic">Other</option>
+                </select>
+            </div>
+            <div class="filter-sep"></div>
+            <div class="filter-group">
+                <label>Status</label>
+                <select id="filter-leads" onchange="applyFilters()">
+                    <option value="all">All Mentions</option>
+                    <option value="leads">Leads Only</option>
+                    <option value="noise">Noise Only</option>
+                </select>
+            </div>
+            <div class="filter-sep"></div>
+            <div class="filter-group">
+                <label>Date</label>
+                <select id="filter-date" onchange="applyFilters()">
+                    <option value="">All Time</option>
+                    <option value="today">Today</option>
+                    <option value="week">This Week</option>
+                    <option value="month">This Month</option>
+                </select>
+            </div>
+            <button class="export-btn" onclick="exportCSV()" title="Download as CSV">📥 Export CSV</button>
+        </div>
+
+        <!-- Main Grid -->
+        <div class="main-grid">
+            <!-- Sidebar -->
+            <div class="sidebar">
+                <!-- Keywords Panel -->
+                <div class="panel">
+                    <h3><span class="icon">🔑</span> Your Keywords</h3>
+                    {% if keywords %}
+                    <ul class="kw-list">
+                        {% for kw in keywords %}
+                        <li>
+                            <div class="kw-info">
+                                <strong>{{ kw.keyword }}</strong>
+                                {% if kw.subreddits %}<span class="sr">in r/{{ kw.subreddits }}</span>{% endif %}
+                            </div>
+                            <form method="POST" action="/keywords/{{ kw.id }}/delete" style="display:inline">
+                                <button type="submit" class="delete-btn">×</button>
+                            </form>
+                        </li>
+                        {% endfor %}
+                    </ul>
+                    {% else %}
+                    <p style="color:#6b7280;font-size:0.9rem;">No keywords yet. Add one to start monitoring.</p>
+                    {% endif %}
+
+                    <form class="add-kw-form" method="POST" action="/keywords/add">
+                        <input type="text" name="keyword" placeholder="Keyword (e.g. 'project management')" required>
+                        <div class="row">
+                            <input type="text" name="subreddits" placeholder="Subreddits (e.g. 'startups,SaaS')">
+                            <button type="submit">Add</button>
+                        </div>
+                    </form>
+                </div>
+
+                <!-- Top Keywords Panel -->
+                <div class="panel" id="top-kw-panel">
+                    <h3><span class="icon">🏆</span> Top Keywords</h3>
+                    <div class="top-kw-loading" id="top-kw-content">Loading...</div>
+                </div>
             </div>
 
-            <div class="panel">
-                <h3>📋 Recent Mentions</h3>
-                {% if mentions %}
-                <ul class="mentions-list">
-                    {% for m in mentions %}
-                    <li class="mention-item">
-                        <div class="title">
-                            <a href="{{ m.url }}" target="_blank">{{ m.title or '(no title)' }}</a>
-                            {% if m.is_lead %}<span class="lead-badge badge-lead">LEAD</span>{% endif %}
-                            {% if m.lead_reason and 'competitor' in m.lead_reason.lower() %}<span class="lead-badge badge-competitor">COMPLAINT</span>{% endif %}
-                        </div>
-                        <div class="meta">
-                            r/{{ m.subreddit or '?' }} · u/{{ m.author or '?' }} · ⬆️{{ m.reddit_score or 0 }} · 💬{{ m.num_comments or 0 }}
-                            <br>Keyword: <strong>{{ m.keyword }}</strong>
-                        </div>
-                        <div class="score-bar">
-                            {% set rel = (m.relevance_score or 0) * 100 %}
-                            {% set dots = (rel / 20)|round(0, 'floor')|int %}
-                            {% for i in range(5) %}
-                            <div class="score-dot {{ 'active' if i < dots else 'inactive' }}"></div>
-                            {% endfor %}
-                            <span style="font-size:0.75rem;color:#64748b;margin-left:6px">relevance: {{ "%.0f"|format(rel) }}%</span>
-                        </div>
-                        {% if m.lead_reason %}<div style="font-size:0.8rem;color:#64748b;margin-top:4px">{{ m.lead_reason }}</div>{% endif %}
-                    </li>
-                    {% endfor %}
-                </ul>
-                {% else %}
-                <p class="empty">No mentions found yet. They'll appear here once the scanner runs.</p>
-                {% endif %}
+            <!-- Mentions Feed -->
+            <div class="mentions-area" id="mentions-container">
+                <!-- Loaded via JS -->
             </div>
         </div>
     </div>
+
+    <script>
+    // ============ STATE ============
+    let currentOffset = 0;
+    const PAGE_SIZE = 25;
+    let isLoading = false;
+    let hasMore = true;
+
+    // ============ INITIAL LOAD ============
+    document.addEventListener('DOMContentLoaded', () => {
+        loadTrends();
+        loadTopKeywords();
+        loadMentions(true);
+        refreshStats();
+    });
+
+    // ============ API HELPERS ============
+    function getFilterParams() {
+        const source = document.getElementById('filter-source').value;
+        const leads = document.getElementById('filter-leads').value;
+        const date = document.getElementById('filter-date').value;
+        let params = `limit=${PAGE_SIZE}`;
+        if (source !== 'all') params += `&source=${encodeURIComponent(source)}`;
+        if (leads !== 'all') params += `&lead_status=${encodeURIComponent(leads)}`;
+        if (date) params += `&date_from=${encodeURIComponent(date)}`;
+        return params;
+    }
+
+    function getExportParams() {
+        const source = document.getElementById('filter-source').value;
+        const leads = document.getElementById('filter-leads').value;
+        const date = document.getElementById('filter-date').value;
+        let params = '';
+        if (source !== 'all') params += `&source=${encodeURIComponent(source)}`;
+        if (leads !== 'all') params += `&lead_status=${encodeURIComponent(leads)}`;
+        if (date) params += `&date_from=${encodeURIComponent(date)}`;
+        return params;
+    }
+
+    // ============ TRENDS ============
+    async function loadTrends() {
+        try {
+            const resp = await fetch('/api/trends');
+            const data = await resp.json();
+            renderTrends(data.trends);
+        } catch (e) {
+            document.getElementById('trend-chart').innerHTML = '<div class="loading">Failed to load trends</div>';
+        }
+    }
+
+    function renderTrends(trends) {
+        const maxTotal = Math.max(1, ...trends.map(t => t.total));
+        const maxLeads = Math.max(1, ...trends.map(t => t.leads));
+        const container = document.getElementById('trend-chart');
+        container.innerHTML = trends.map(t => {
+            const totalH = Math.max(2, Math.round((t.total / maxTotal) * 100));
+            const leadH = Math.max(1, Math.round((t.leads / maxLeads) * 80));
+            return `
+                <div class="trend-bar-wrap">
+                    <div class="trend-tooltip" title="Total: ${t.total}">${t.total}</div>
+                    <div class="trend-bar-total" style="height:${totalH}px" title="${t.date}: ${t.total} mentions"></div>
+                    <div class="trend-bar-lead" style="height:${leadH}px" title="${t.date}: ${t.leads} leads"></div>
+                    <div class="trend-label">${t.label}</div>
+                </div>
+            `;
+        }).join('');
+    }
+
+    // ============ TOP KEYWORDS ============
+    async function loadTopKeywords() {
+        try {
+            const resp = await fetch('/api/top-keywords');
+            const data = await resp.json();
+            renderTopKeywords(data.keywords);
+        } catch (e) {
+            document.getElementById('top-kw-content').textContent = 'Failed to load';
+        }
+    }
+
+    function renderTopKeywords(keywords) {
+        const el = document.getElementById('top-kw-content');
+        if (!keywords || keywords.length === 0) {
+            el.innerHTML = '<p style="color:#6b7280;font-size:0.85rem;">No data yet. Mentions will appear after scanning.</p>';
+            return;
+        }
+        const maxLeads = Math.max(1, ...keywords.map(k => k.leads));
+        el.innerHTML = `
+            <ul class="top-kw-list">
+                ${keywords.map(k => {
+                    const barWidth = Math.round((k.leads / maxLeads) * 100);
+                    const pct = k.avg_score ? Math.round(k.avg_score * 100) : 0;
+                    return `
+                        <li>
+                            <div>
+                                <span class="kw-name">${escHtml(k.keyword)}</span>
+                                <div style="background:#1e2440;height:4px;border-radius:2px;margin-top:4px;min-width:80px;">
+                                    <div style="background:linear-gradient(90deg,#22c55e,#3b82f6);height:100%;border-radius:2px;width:${barWidth}%"></div>
+                                </div>
+                            </div>
+                            <div class="kw-stats">
+                                <span class="lead-count">${k.leads}</span> leads
+                                <br>${k.total_mentions} total · ${pct}%
+                            </div>
+                        </li>
+                    `;
+                }).join('')}
+            </ul>
+        `;
+    }
+
+    // ============ MENTIONS ============
+    async function loadMentions(reset = false) {
+        if (isLoading) return;
+        if (!hasMore && !reset) return;
+
+        isLoading = true;
+        if (reset) {
+            currentOffset = 0;
+            hasMore = true;
+        }
+
+        const container = document.getElementById('mentions-container');
+        if (reset) {
+            container.innerHTML = '<div class="loading">Loading mentions...</div>';
+        }
+
+        try {
+            const params = getFilterParams() + `&offset=${currentOffset}`;
+            const resp = await fetch('/api/mentions?' + params);
+            const data = await resp.json();
+
+            if (reset) container.innerHTML = '';
+
+            if (data.mentions.length === 0 && reset) {
+                container.innerHTML = '<div class="empty-state"><span class="icon">📭</span>No mentions found matching your filters.</div>';
+            } else {
+                data.mentions.forEach(m => container.appendChild(createMentionCard(m)));
+            }
+
+            currentOffset += data.mentions.length;
+            hasMore = data.has_more;
+
+            // Update load-more button
+            updateLoadMoreButton();
+        } catch (e) {
+            if (reset) container.innerHTML = '<div class="empty-state"><span class="icon">⚠️</span>Failed to load mentions.</div>';
+        } finally {
+            isLoading = false;
+        }
+    }
+
+    function updateLoadMoreButton() {
+        const container = document.getElementById('mentions-container');
+        // Remove existing load-more
+        const existing = container.querySelector('.load-more-wrap');
+        if (existing) existing.remove();
+
+        if (hasMore) {
+            const wrap = document.createElement('div');
+            wrap.className = 'load-more-wrap';
+            wrap.innerHTML = '<button class="load-more-btn" onclick="loadMentions(false)">Load More ↓</button>';
+            container.appendChild(wrap);
+        } else if (currentOffset > 0) {
+            const wrap = document.createElement('div');
+            wrap.className = 'load-more-wrap';
+            wrap.innerHTML = '<span style="color:#4b5563;font-size:0.85rem;">— All mentions loaded —</span>';
+            container.appendChild(wrap);
+        }
+    }
+
+    function createMentionCard(m) {
+        const card = document.createElement('div');
+        card.className = 'mention-card';
+
+        const relPct = Math.round((m.relevance_score || 0) * 100);
+        const dots = Math.round(relPct / 20);
+        let dotsHtml = '';
+        for (let i = 0; i < 5; i++) {
+            dotsHtml += `<div class="score-dot ${i < dots ? 'active' : 'inactive'}"></div>`;
+        }
+
+        let badgeHtml = '';
+        if (m.is_lead) {
+            const reason = (m.lead_reason || '').toLowerCase();
+            if (reason.includes('competitor') || reason.includes('complaint')) {
+                badgeHtml = '<span class="badge badge-competitor">COMPLAINT</span>';
+            } else if (reason.includes('question')) {
+                badgeHtml = '<span class="badge badge-question">QUESTION</span>';
+            } else {
+                badgeHtml = '<span class="badge badge-lead">LEAD</span>';
+            }
+        }
+
+        card.innerHTML = `
+            <div class="title">
+                <a href="${escHtml(m.url || '#')}" target="_blank" rel="noopener">${escHtml(m.title || '(no title)')}</a>
+                ${badgeHtml}
+            </div>
+            <div class="meta">
+                r/${escHtml(m.subreddit || '?')} · u/${escHtml(m.author || '?')} · ⬆${m.reddit_score || 0} · 💬${m.num_comments || 0}
+                <br>Keyword: <strong>${escHtml(m.keyword || '?')}</strong>
+            </div>
+            <div class="score-bar">
+                ${dotsHtml}
+                <span class="score-text">relevance: ${relPct}%</span>
+            </div>
+            ${m.lead_reason ? `<div class="reason-text">${escHtml(m.lead_reason)}</div>` : ''}
+        `;
+        return card;
+    }
+
+    // ============ FILTERS ============
+    function applyFilters() {
+        loadMentions(true);
+    }
+
+    // ============ CSV EXPORT ============
+    function exportCSV() {
+        const params = getExportParams();
+        window.location.href = '/api/export?' + params;
+    }
+
+    // ============ STATS REFRESH ============
+    async function refreshStats() {
+        try {
+            const resp = await fetch('/api/stats');
+            const data = await resp.json();
+            document.getElementById('stat-keywords').textContent = data.keywords;
+            document.getElementById('stat-total').textContent = data.total_mentions;
+            document.getElementById('stat-leads').textContent = data.leads_found;
+        } catch (e) { /* silently ignore */ }
+    }
+
+    // ============ UTILITY ============
+    function escHtml(str) {
+        const div = document.createElement('div');
+        div.textContent = str;
+        return div.innerHTML;
+    }
+    </script>
 </body>
 </html>

@@ -1,13 +1,15 @@
 """SignalSeek — AI-powered Reddit lead monitoring.
 Main FastAPI application.
 """
+import csv
+import io
 import os
 import sqlite3
 from datetime import datetime, timedelta
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI, Request, Form, Depends, HTTPException, Query
-from fastapi.responses import HTMLResponse, RedirectResponse, JSONResponse
+from fastapi.responses import HTMLResponse, RedirectResponse, JSONResponse, StreamingResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 import bcrypt
@@ -246,22 +248,230 @@ async def logout():
 
 @app.get("/api/mentions")
 async def api_mentions(request: Request, limit: int = Query(50, le=200),
-                       min_score: float = Query(0, ge=0, le=1)):
+                       min_score: float = Query(0, ge=0, le=1),
+                       offset: int = Query(0, ge=0),
+                       source: str = Query("", description="Filter by source: hackernews, stackexchange, hn_jobs, generic, all"),
+                       lead_status: str = Query("all", description="Filter: all, leads, noise"),
+                       date_from: str = Query("", description="ISO date YYYY-MM-DD or 'today','week','month'"),
+                       date_to: str = Query("", description="ISO date YYYY-MM-DD")):
     user = get_current_user(request)
     if not user:
         raise HTTPException(status_code=401)
 
     conn = get_db()
-    mentions = conn.execute("""
+
+    # Build WHERE clause
+    conditions = ["m.user_id = ?", "m.relevance_score >= ?"]
+    params = [user["id"], min_score]
+
+    # Source filter
+    if source and source != "all":
+        if source == "hackernews":
+            conditions.append("m.subreddit = 'HackerNews' AND m.reddit_id NOT LIKE 'hn-job-%'")
+        elif source == "hn_jobs":
+            conditions.append("m.subreddit = 'HackerNews' AND m.reddit_id LIKE 'hn-job-%'")
+        elif source == "stackexchange":
+            conditions.append("m.subreddit = 'StackOverflow'")
+        elif source == "generic":
+            conditions.append("m.subreddit NOT IN ('HackerNews', 'StackOverflow')")
+
+    # Lead status filter
+    if lead_status == "leads":
+        conditions.append("m.is_lead = 1")
+    elif lead_status == "noise":
+        conditions.append("m.is_lead = 0")
+
+    # Date range filter
+    today = datetime.utcnow().strftime("%Y-%m-%d")
+    if date_from == "today":
+        conditions.append("DATE(m.found_at) = ?")
+        params.append(today)
+    elif date_from == "week":
+        week_ago = (datetime.utcnow() - timedelta(days=7)).strftime("%Y-%m-%d")
+        conditions.append("DATE(m.found_at) >= ?")
+        params.append(week_ago)
+    elif date_from == "month":
+        month_ago = (datetime.utcnow() - timedelta(days=30)).strftime("%Y-%m-%d")
+        conditions.append("DATE(m.found_at) >= ?")
+        params.append(month_ago)
+    elif date_from:
+        conditions.append("DATE(m.found_at) >= ?")
+        params.append(date_from)
+
+    if date_to:
+        conditions.append("DATE(m.found_at) <= ?")
+        params.append(date_to)
+
+    where_clause = " AND ".join(conditions)
+
+    # Get total count (for pagination)
+    count_row = conn.execute(
+        f"SELECT COUNT(*) FROM mentions m JOIN keywords k ON m.keyword_id = k.id WHERE {where_clause}",
+        params
+    ).fetchone()
+    total_count = count_row[0] if count_row else 0
+
+    mentions = conn.execute(f"""
         SELECT m.*, k.keyword FROM mentions m
         JOIN keywords k ON m.keyword_id = k.id
-        WHERE m.user_id = ? AND m.relevance_score >= ?
+        WHERE {where_clause}
         ORDER BY m.found_at DESC
-        LIMIT ?
-    """, (user["id"], min_score, limit)).fetchall()
+        LIMIT ? OFFSET ?
+    """, params + [limit, offset]).fetchall()
     conn.close()
 
-    return {"mentions": [dict(m) for m in mentions]}
+    return {
+        "mentions": [dict(m) for m in mentions],
+        "total": total_count,
+        "offset": offset,
+        "limit": limit,
+        "has_more": (offset + limit) < total_count
+    }
+
+
+@app.get("/api/trends")
+async def api_trends(request: Request):
+    """Return mentions per day for the last 7 days."""
+    user = get_current_user(request)
+    if not user:
+        raise HTTPException(status_code=401)
+
+    conn = get_db()
+    today = datetime.utcnow()
+    days = []
+    trends = []
+
+    for i in range(6, -1, -1):
+        d = today - timedelta(days=i)
+        day_str = d.strftime("%Y-%m-%d")
+        day_label = d.strftime("%a")  # Mon, Tue, etc.
+
+        count = conn.execute(
+            "SELECT COUNT(*) FROM mentions WHERE user_id = ? AND DATE(found_at) = ?",
+            (user["id"], day_str)
+        ).fetchone()[0]
+
+        leads_count = conn.execute(
+            "SELECT COUNT(*) FROM mentions WHERE user_id = ? AND DATE(found_at) = ? AND is_lead = 1",
+            (user["id"], day_str)
+        ).fetchone()[0]
+
+        days.append(day_label)
+        trends.append({"date": day_str, "label": day_label, "total": count, "leads": leads_count})
+
+    conn.close()
+    return {"trends": trends}
+
+
+@app.get("/api/top-keywords")
+async def api_top_keywords(request: Request):
+    """Return top keywords by lead generation."""
+    user = get_current_user(request)
+    if not user:
+        raise HTTPException(status_code=401)
+
+    conn = get_db()
+    rows = conn.execute("""
+        SELECT k.keyword, COUNT(*) as total_mentions,
+               SUM(CASE WHEN m.is_lead = 1 THEN 1 ELSE 0 END) as leads,
+               AVG(m.relevance_score) as avg_score
+        FROM mentions m
+        JOIN keywords k ON m.keyword_id = k.id
+        WHERE m.user_id = ?
+        GROUP BY k.keyword
+        ORDER BY leads DESC, total_mentions DESC
+        LIMIT 10
+    """, (user["id"],)).fetchall()
+    conn.close()
+
+    return {"keywords": [dict(r) for r in rows]}
+
+
+@app.get("/api/export")
+async def api_export(request: Request,
+                     source: str = Query("all"),
+                     lead_status: str = Query("all"),
+                     date_from: str = Query(""),
+                     date_to: str = Query("")):
+    """Export mentions as CSV."""
+    user = get_current_user(request)
+    if not user:
+        raise HTTPException(status_code=401)
+
+    conn = get_db()
+
+    conditions = ["m.user_id = ?"]
+    params = [user["id"]]
+
+    if source and source != "all":
+        if source == "hackernews":
+            conditions.append("m.subreddit = 'HackerNews' AND m.reddit_id NOT LIKE 'hn-job-%'")
+        elif source == "hn_jobs":
+            conditions.append("m.subreddit = 'HackerNews' AND m.reddit_id LIKE 'hn-job-%'")
+        elif source == "stackexchange":
+            conditions.append("m.subreddit = 'StackOverflow'")
+        elif source == "generic":
+            conditions.append("m.subreddit NOT IN ('HackerNews', 'StackOverflow')")
+
+    if lead_status == "leads":
+        conditions.append("m.is_lead = 1")
+    elif lead_status == "noise":
+        conditions.append("m.is_lead = 0")
+
+    today = datetime.utcnow().strftime("%Y-%m-%d")
+    if date_from == "today":
+        conditions.append("DATE(m.found_at) = ?")
+        params.append(today)
+    elif date_from == "week":
+        week_ago = (datetime.utcnow() - timedelta(days=7)).strftime("%Y-%m-%d")
+        conditions.append("DATE(m.found_at) >= ?")
+        params.append(week_ago)
+    elif date_from == "month":
+        month_ago = (datetime.utcnow() - timedelta(days=30)).strftime("%Y-%m-%d")
+        conditions.append("DATE(m.found_at) >= ?")
+        params.append(month_ago)
+    elif date_from:
+        conditions.append("DATE(m.found_at) >= ?")
+        params.append(date_from)
+
+    if date_to:
+        conditions.append("DATE(m.found_at) <= ?")
+        params.append(date_to)
+
+    where_clause = " AND ".join(conditions)
+
+    mentions = conn.execute(f"""
+        SELECT m.title, m.text, m.subreddit, m.author, m.reddit_score, m.num_comments,
+               m.url, m.is_lead, m.lead_reason, m.relevance_score, m.found_at, k.keyword
+        FROM mentions m
+        JOIN keywords k ON m.keyword_id = k.id
+        WHERE {where_clause}
+        ORDER BY m.found_at DESC
+    """, params).fetchall()
+    conn.close()
+
+    # Build CSV in memory
+    output = io.StringIO()
+    writer = csv.writer(output)
+    writer.writerow(["Title", "Text", "Source", "Author", "Score", "Comments", "URL",
+                     "Is Lead", "Lead Reason", "Relevance", "Keyword", "Found At"])
+    for m in mentions:
+        writer.writerow([
+            m["title"] or "", m["text"] or "", m["subreddit"] or "", m["author"] or "",
+            m["reddit_score"] or 0, m["num_comments"] or 0, m["url"] or "",
+            "Yes" if m["is_lead"] else "No", m["lead_reason"] or "",
+            m["relevance_score"] or 0, m["keyword"] or "", m["found_at"] or ""
+        ])
+
+    csv_content = output.getvalue()
+    output.close()
+
+    timestamp = datetime.utcnow().strftime("%Y%m%d_%H%M%S")
+    return StreamingResponse(
+        iter([csv_content]),
+        media_type="text/csv",
+        headers={"Content-Disposition": f"attachment; filename=signalseek_export_{timestamp}.csv"}
+    )
 
 
 @app.get("/api/stats")

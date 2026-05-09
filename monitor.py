@@ -153,13 +153,152 @@ def search_hn_whoishiring(keyword: str, limit: int = 10) -> list[dict]:
 
 
 # ============================================================
+# Data Source 3: HN Show HN
+# ============================================================
+
+def search_hn_showhn(keyword: str, limit: int = 15) -> list[dict]:
+    """Search HackerNews 'Show HN' posts specifically — people launching products,
+    often looking for feedback or alternatives."""
+    url = (f"https://hn.algolia.com/api/v1/search_by_date?"
+           f"query={urllib.parse.quote(keyword)}"
+           f"&tags=show_hn"
+           f"&hitsPerPage={limit}")
+
+    req = urllib.request.Request(url, headers={"User-Agent": USER_AGENT})
+    try:
+        with urllib.request.urlopen(req, timeout=15) as resp:
+            data = json.loads(resp.read())
+    except Exception:
+        return []
+
+    posts = []
+    for hit in data.get("hits", []):
+        obj_id = hit.get("objectID", "")
+        posts.append({
+            "reddit_id": f"hn-show-{obj_id}",
+            "subreddit": "Show HN",
+            "title": hit.get("title", ""),
+            "text": (hit.get("story_text", "") or "")[:2000],
+            "url": f"https://news.ycombinator.com/item?id={obj_id}",
+            "author": hit.get("author", "unknown"),
+            "reddit_score": hit.get("points", 0) or 0,
+            "num_comments": hit.get("num_comments", 0) or 0,
+            "created_utc": hit.get("created_at_i", 0) or 0,
+        })
+
+    return posts
+
+
+# ============================================================
+# Data Source 4: Google News RSS
+# ============================================================
+
+def search_google_news(keyword: str, limit: int = 20) -> list[dict]:
+    """Search Google News RSS for keyword mentions."""
+    import xml.etree.ElementTree as ET
+    from datetime import datetime, timezone
+    
+    url = f"https://news.google.com/rss/search?q={urllib.parse.quote(keyword)}&hl=en-US&gl=US&ceid=US:en"
+    req = urllib.request.Request(url, headers={"User-Agent": USER_AGENT})
+    
+    try:
+        with urllib.request.urlopen(req, timeout=15) as resp:
+            raw = resp.read().decode("utf-8", errors="replace")
+    except Exception as e:
+        logger.error(f"Google News failed for '{keyword}': {e}")
+        return []
+
+    posts = []
+    try:
+        root = ET.fromstring(raw)
+        for i, item in enumerate(root.findall(".//item")):
+            if i >= limit:
+                break
+            title = (item.findtext("title") or "").strip()
+            link = (item.findtext("link") or "").strip()
+            desc = (item.findtext("description") or "")[:2000]
+            source = (item.findtext("source") or "Google News").strip()
+            pubdate = item.findtext("pubDate") or ""
+            
+            # Parse pubDate to UTC timestamp
+            created_utc = 0
+            try:
+                from email.utils import parsedate_to_datetime
+                created_utc = parsedate_to_datetime(pubdate).timestamp()
+            except Exception:
+                pass
+
+            posts.append({
+                "reddit_id": f"news-{hash(link) & 0x7fffffff:x}",
+                "subreddit": "Google News",
+                "title": title,
+                "text": desc,
+                "url": link,
+                "author": source,
+                "reddit_score": 0,
+                "num_comments": 0,
+                "created_utc": created_utc,
+            })
+    except ET.ParseError as e:
+        logger.error(f"Google News RSS parse error: {e}")
+
+    return posts
+
+
+# ============================================================
+# Data Source 5: Lobsters
+# ============================================================
+
+def search_lobsters(keyword: str, limit: int = 20) -> list[dict]:
+    """Search Lobsters (lobste.rs) for tech-focused discussions."""
+    url = f"https://lobste.rs/search.json?q={urllib.parse.quote(keyword)}&what=stories&order=relevance"
+    req = urllib.request.Request(url, headers={"User-Agent": USER_AGENT})
+    
+    try:
+        with urllib.request.urlopen(req, timeout=15) as resp:
+            data = json.loads(resp.read())
+    except Exception as e:
+        logger.error(f"Lobsters search failed for '{keyword}': {e}")
+        return []
+
+    posts = []
+    for item in data[:limit]:
+        posts.append({
+            "reddit_id": f"lob-{item.get('short_id', '')}",
+            "subreddit": "Lobsters",
+            "title": item.get("title", ""),
+            "text": (item.get("description", "") or "")[:2000],
+            "url": item.get("url", f"https://lobste.rs/s/{item.get('short_id', '')}"),
+            "author": item.get("submitter_user", {}).get("username", "unknown") if isinstance(item.get("submitter_user"), dict) else "unknown",
+            "reddit_score": item.get("score", 0) or 0,
+            "num_comments": item.get("comment_count", 0) or 0,
+            "created_utc": item.get("created_at", "").replace("T", " ").replace("Z", "") if item.get("created_at") else "",
+        })
+        
+        # Try to parse the ISO timestamp to UTC
+        if isinstance(posts[-1]["created_utc"], str):
+            try:
+                from datetime import datetime
+                posts[-1]["created_utc"] = datetime.fromisoformat(
+                    item.get("created_at", "").replace("Z", "+00:00")
+                ).timestamp()
+            except Exception:
+                posts[-1]["created_utc"] = 0
+
+    return posts
+
+
+# ============================================================
 # Unified search
 # ============================================================
 
 ALL_SOURCES = [
     ("hackernews", search_hackernews),
+    ("show_hn", search_hn_showhn),
     ("stackexchange", search_stackexchange),
     ("hn_jobs", search_hn_whoishiring),
+    ("google_news", search_google_news),
+    ("lobsters", search_lobsters),
 ]
 
 
